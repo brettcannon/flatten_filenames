@@ -1,0 +1,9 @@
+[package]
+name = "flatten_filenames"
+version = "0.1.0"
+authors = ["Brett Cannon <brett@python.org>"]
+
+[[bin]]
+name = "flatten-filenames"
+
+[dependencies]
