@@ -14,8 +14,9 @@ fn println_stderr(message: String) {
 
 /// Extract the leading character of a path.
 fn leading_char(path: &path::PathBuf) -> char {
-    let filename = path.file_name().expect("dir lacks filename").to_str().expect("dir as str");
-    filename.chars().next().unwrap()
+    let filename = path.file_name().expect("dir lacks filename");
+    let filename_str = filename.to_str().expect("dir as str");
+    filename_str.chars().next().unwrap()
 }
 
 /// Check if a `entry` is a directory that doesn't have any special
@@ -66,17 +67,17 @@ fn new_prefix(old_prefix: &str, tail: &str) -> String {
 /// Certain considerations are taken into account based on the leading
 /// character of the directory's name.
 fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
-    let path_tail = directory.file_name()
-        .expect("directory lacks a tail")
-        .to_str()
-        .expect("can't decode path tail");
+    let filename = directory.file_name().expect("directory lacks a tail");
+    let path_tail = filename.to_str().expect("can't decode path tail");
     let prefix = new_prefix(prev_prefix, path_tail);
+    let prefix_str = prefix.as_str();
     for entry in directory.read_dir().unwrap() {
         let entry = entry.unwrap();
+        let entry_path = entry.path();
         if should_traverse(&entry) {
-            flatten(&entry.path(), prefix.as_str());
+            flatten(&entry_path, prefix_str);
         } else {
-            rename(&entry.path(), prefix.as_str());
+            rename(&entry_path, prefix_str);
         }
     }
 }
