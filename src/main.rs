@@ -70,7 +70,7 @@ fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
     let path_tail = filename.to_str().expect("can't decode path tail");
     let prefix = new_prefix(prev_prefix, path_tail);
     let prefix_str = prefix.as_str();
-    for entry in rdirectory.read_dir().unwrap() {
+    for entry in directory.read_dir().unwrap() {
         let entry = entry.unwrap();
         let entry_path = entry.path();
         if should_traverse(&entry) {
@@ -116,4 +116,9 @@ fn main() {
     }
 
     flatten(&path, "");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
