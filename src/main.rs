@@ -4,15 +4,24 @@ use std::io::Write;  // Need `write_fmt()` method for `writeln!()`.
 use std::path;
 use std::process;
 
-
+/// Prints a message to `std::io::stderr`.
 fn println_stderr(message: String) {
     let r = writeln!(&mut std::io::stderr(), "{}", message);
     r.expect("failed to write to stderr");
 }
 
-
-fn flatten(directory: &path::Path, prefix: String) {
-    println!("{:?} {}", directory, prefix);
+/// "Flattens" `directory by prepending `prefix` plus the directories
+/// name.
+///
+/// Certain considerations are taken into account based on the leading
+/// character of the directory's name.
+fn flatten(directory: &path::PathBuf, prev_prefix: String) {
+    let path_tail = directory.file_name().expect("directory lacks a tail");
+    let prefix = prev_prefix + path_tail.to_str().expect("can't decode path tail");
+    for entry in directory.read_dir().unwrap() {
+        let entry = entry.unwrap();
+        println!("{:?}", entry.file_name());
+    }
 }
 
 
@@ -37,7 +46,6 @@ fn main() {
         process::exit(1);
     }
 
-    println!("Got {} as an argument", directory);
     let path = match path::Path::new(&directory).canonicalize() {
         Ok(o) => o,  // Using o.as_path() won't work as `o` leaves the scope.
         Err(e) => {
@@ -46,5 +54,10 @@ fn main() {
         }
     };
 
-    flatten(path.as_path(), "".to_string());
+    if !path.is_dir() {
+        println_stderr("argument is not a directory".to_string());
+        process::exit(1);
+    }
+
+    flatten(&path, "".to_string());
 }
