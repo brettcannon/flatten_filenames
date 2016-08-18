@@ -12,12 +12,6 @@ fn println_stderr(message: String) {
 }
 
 
-/// Extract the leading character of a path.
-fn leading_char(path: &path::PathBuf) -> char {
-    let filename = path.file_name().expect("dir lacks filename").to_str().expect("dir as str");
-    filename.chars().next().unwrap()
-}
-
 /// Check if a `entry` is a directory that doesn't have any special
 /// leading characters.
 ///
@@ -26,24 +20,21 @@ fn leading_char(path: &path::PathBuf) -> char {
 fn should_traverse(entry: &fs::DirEntry) -> bool {
     if entry.metadata().unwrap().is_dir() {
         let path = entry.path();
-        let leading_char = leading_char(&path);
+        let filename = path.file_name().expect("dir lacks filename").to_str().expect("dir as str");
+        let leading_char = filename.chars().next().unwrap();
         if leading_char != '.' && leading_char != '_' {
             true
-        } else {
+        }
+        else {
             false
         }
-    } else {
+    }
+    else {
         false
     }
 }
 
-/// Rename a file with a prefix.
-///
-/// If the file starts with '.' then skip the renaming.
 fn rename(path: &path::PathBuf, prefix: &str) {
-    if leading_char(path) == '.' {
-        return;
-    }
     // XXX Rename file with prefix
     println!("{} - {:?}", prefix, path.file_name());
 }
@@ -54,7 +45,8 @@ fn rename(path: &path::PathBuf, prefix: &str) {
 fn new_prefix(old_prefix: &str, tail: &str) -> String {
     if old_prefix.is_empty() {
         tail.to_string()
-    } else {
+    }
+    else {
         // XXX strip off '-' or '+'
         old_prefix.to_string() + " - " + tail
     }
@@ -66,16 +58,14 @@ fn new_prefix(old_prefix: &str, tail: &str) -> String {
 /// Certain considerations are taken into account based on the leading
 /// character of the directory's name.
 fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
-    let path_tail = directory.file_name()
-        .expect("directory lacks a tail")
-        .to_str()
-        .expect("can't decode path tail");
+    let path_tail = directory.file_name().expect("directory lacks a tail").to_str().expect("can't decode path tail");
     let prefix = new_prefix(prev_prefix, path_tail);
     for entry in directory.read_dir().unwrap() {
         let entry = entry.unwrap();
         if should_traverse(&entry) {
             flatten(&entry.path(), prefix.as_str());
-        } else {
+        }
+        else {
             rename(&entry.path(), prefix.as_str());
         }
     }
