@@ -11,7 +11,6 @@ fn println_stderr(message: String) {
     r.expect("failed to write to stderr");
 }
 
-
 /// Extract the leading character of a path.
 fn leading_char(path: &path::PathBuf) -> char {
     let filename = path.file_name().expect("dir lacks filename");
@@ -71,7 +70,7 @@ fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
     let path_tail = filename.to_str().expect("can't decode path tail");
     let prefix = new_prefix(prev_prefix, path_tail);
     let prefix_str = prefix.as_str();
-    for entry in directory.read_dir().unwrap() {
+    for entry in rdirectory.read_dir().unwrap() {
         let entry = entry.unwrap();
         let entry_path = entry.path();
         if should_traverse(&entry) {
@@ -81,7 +80,6 @@ fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
         }
     }
 }
-
 
 fn main() {
     // Parse arguments.
