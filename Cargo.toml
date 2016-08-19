@@ -7,3 +7,6 @@ authors = ["Brett Cannon <brett@python.org>"]
 name = "flatten-filenames"
 
 [dependencies]
+
+[dev-dependencies]
+tempdir = "0.3.5"

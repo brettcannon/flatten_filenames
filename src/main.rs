@@ -12,9 +12,9 @@ fn println_stderr(message: String) {
 }
 
 /// Extract the leading character of a path.
-fn leading_char(path: &path::PathBuf) -> char {
-    let filename = path.file_name().expect("dir lacks filename");
-    let filename_str = filename.to_str().expect("dir as str");
+pub fn leading_char(path: &path::PathBuf) -> char {
+    let filename = path.file_name().expect("path lacks filename");
+    let filename_str = filename.to_str().expect("filename as str");
     filename_str.chars().next().unwrap()
 }
 
@@ -23,7 +23,7 @@ fn leading_char(path: &path::PathBuf) -> char {
 ///
 /// The characters that signal not to traverse into a directory are
 /// '.' and '_'.
-fn should_traverse(entry: &fs::DirEntry) -> bool {
+pub fn should_traverse(entry: &fs::DirEntry) -> bool {
     if entry.metadata().unwrap().is_dir() {
         let path = entry.path();
         let leading_char = leading_char(&path);
@@ -119,6 +119,59 @@ fn main() {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
+
+    use std::fs;
+    use std::path;
+
+    extern crate tempdir;
+
+    #[test]
+    fn leading_char_for_filename() {
+        let mut path = path::PathBuf::new();
+        path.push("/tmp");
+        path.push("file.txt");
+        assert_eq!(leading_char(&path), 'f');
+    }
+
+    #[test]
+    fn should_traverse_not_dir() {
+        let tmp_dir = tempdir::TempDir::new("test");
+        if tmp_dir.is_err() {
+            return;
+        }
+        let tmp_dir = tmp_dir.unwrap();
+
+        let tmp_dir_path = tmp_dir.path();
+        let mut path_buf = tmp_dir_path.to_path_buf();
+        path_buf.push("file.txt");
+        let f = fs::File::create(&path_buf);
+        if f.is_err() {
+            return;
+        }
+        let f = f.unwrap();
+        if f.sync_all().is_err() {
+            return;
+        }
+
+        let read_dir = path_buf.read_dir();
+        if read_dir.is_err() {
+            return;
+        }
+        let entry_item = read_dir.unwrap().last();
+        let entry_option = entry_item.unwrap();
+        let entry = entry_option.unwrap();
+        assert!(!should_traverse(&entry));
+    }
+
+    #[test]
+    fn should_traverse_not_leading_dot_or_underscore() {
+
+    }
+
+    #[test]
+    fn should_traverse_directory() {
+
+    }
 }
