@@ -51,12 +51,16 @@ fn rename(path: &path::PathBuf, prefix: &str) {
 /// Create the filename prefix.
 ///
 /// If a new part starts with '-' or '+' then strip it off.
-fn new_prefix(old_prefix: &str, tail: &str) -> String {
+pub fn new_prefix(old_prefix: &str, tail: &str) -> String {
     if old_prefix.is_empty() {
         tail.to_string()
     } else {
-        // XXX strip off '-' or '+'
-        old_prefix.to_string() + " - " + tail
+        let mut postfix = tail;
+        if tail[0..1] == "+".to_string() || tail[0..1] == "-".to_string() {
+            postfix = &tail[1..];
+        }
+
+        old_prefix.to_string() + " - " + postfix
     }
 }
 
@@ -239,5 +243,22 @@ let tmp_dir = tempdir::TempDir::new("test");
             count += 1;
         }
         assert_eq!(1, count);
+    }
+
+    #[test]
+    fn new_prefix_empty_old_prefix() {
+        assert_eq!("tail", new_prefix("", "tail"));
+    }
+
+    #[test]
+    fn new_prefix_leading_dash_or_plus() {
+        assert_eq!("a - b", new_prefix("a", "-b"));
+        assert_eq!("a - b", new_prefix("a", "+b"));
+    }
+
+    #[test]
+    fn new_prefix_works() {
+        assert_eq!("a - b", new_prefix("a", "b"));
+        assert_eq!("a - b - c", new_prefix("a - b", "c"));
     }
 }
