@@ -40,12 +40,21 @@ pub fn should_traverse(entry: &fs::DirEntry) -> bool {
 /// Rename a file with a prefix.
 ///
 /// If the file starts with '.' then skip the renaming.
-fn rename(path: &path::PathBuf, prefix: &str) {
+pub fn rename(path: &path::PathBuf, prefix: &str) {
     if leading_char(path) == '.' {
         return;
     }
-    // XXX Rename file with prefix
-    println!("{} - {:?}", prefix, path.file_name());
+
+    let os_filename = path.file_name().expect("path lacks a filename");
+    let filename = os_filename.to_str().expect("filename not UTF-8");
+    let new_filename = prefix.to_string() + " - " + filename;
+    let mut new_path = path.clone();
+    new_path.pop();
+    new_path.push(new_filename);
+    let r = fs::rename(path.as_path(), new_path.as_path());
+    if r.is_err() {
+        panic!(r);
+    }
 }
 
 /// Create the filename prefix.
@@ -215,7 +224,7 @@ mod test {
 
     #[test]
     fn should_traverse_directory() {
-let tmp_dir = tempdir::TempDir::new("test");
+        let tmp_dir = tempdir::TempDir::new("test");
         if tmp_dir.is_err() {
             return;
         }
@@ -260,5 +269,59 @@ let tmp_dir = tempdir::TempDir::new("test");
     fn new_prefix_works() {
         assert_eq!("a - b", new_prefix("a", "b"));
         assert_eq!("a - b - c", new_prefix("a - b", "c"));
+    }
+
+    #[test]
+    fn rename_skips_dot_files() {
+        let tmp_dir = tempdir::TempDir::new("test");
+        if tmp_dir.is_err() {
+            return;
+        }
+        let tmp_dir = tmp_dir.unwrap();
+
+        // Create a file.
+        let tmp_dir_path = tmp_dir.path();
+        let mut path_buf = tmp_dir_path.to_path_buf();
+        path_buf.push(".file");
+        let f = fs::File::create(&path_buf);
+        if f.is_err() {
+            return;
+        }
+        let f = f.unwrap();
+        // Flush the file.
+        if f.sync_all().is_err() {
+            return;
+        }
+
+        rename(&path_buf, "prefix");
+        assert!(path_buf.exists());
+    }
+
+    #[test]
+    fn rename_works() {
+        let tmp_dir = tempdir::TempDir::new("test");
+        if tmp_dir.is_err() {
+            return;
+        }
+        let tmp_dir = tmp_dir.unwrap();
+
+        // Create a file.
+        let tmp_dir_path = tmp_dir.path();
+        let mut path_buf = tmp_dir_path.to_path_buf();
+        path_buf.push("d");
+        let f = fs::File::create(&path_buf);
+        if f.is_err() {
+            return;
+        }
+        let f = f.unwrap();
+        // Flush the file.
+        if f.sync_all().is_err() {
+            return;
+        }
+
+        rename(&path_buf, "a - b - c");
+        path_buf.pop();
+        path_buf.push("a - b - c - d");
+        assert!(path_buf.exists());
     }
 }
