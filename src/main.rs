@@ -137,12 +137,14 @@ mod test {
 
     #[test]
     fn should_traverse_not_dir() {
+        // Create a temporary directory.
         let tmp_dir = tempdir::TempDir::new("test");
         if tmp_dir.is_err() {
             return;
         }
         let tmp_dir = tmp_dir.unwrap();
 
+        // Create a file.
         let tmp_dir_path = tmp_dir.path();
         let mut path_buf = tmp_dir_path.to_path_buf();
         path_buf.push("file.txt");
@@ -151,10 +153,12 @@ mod test {
             return;
         }
         let f = f.unwrap();
+        // Flush the file.
         if f.sync_all().is_err() {
             return;
         }
 
+        // Get the temporary directory's content.
         let read_dir = path_buf.read_dir();
         if read_dir.is_err() {
             return;
@@ -162,6 +166,7 @@ mod test {
         let entry_item = read_dir.unwrap().last();
         let entry_option = entry_item.unwrap();
         let entry = entry_option.unwrap();
+
         assert!(!should_traverse(&entry));
     }
 
