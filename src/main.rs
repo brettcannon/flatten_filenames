@@ -172,11 +172,72 @@ mod test {
 
     #[test]
     fn should_traverse_not_leading_dot_or_underscore() {
+        let tmp_dir = tempdir::TempDir::new("test");
+        if tmp_dir.is_err() {
+            return;
+        }
+        let tmp_dir = tmp_dir.unwrap();
 
+        let dir_builder = fs::DirBuilder::new();
+        let tmp_dir_path = tmp_dir.path();
+        let mut path_buf = tmp_dir_path.to_path_buf();
+        path_buf.push(".directory");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.pop();
+        }
+
+        path_buf.push("_directory");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.pop();
+        }
+
+        // Get the temporary directory's content.
+        let read_dir = path_buf.read_dir();
+        if read_dir.is_err() {
+            return;
+        }
+
+        let mut count = 0;
+        for entry in read_dir.unwrap() {
+            assert!(!should_traverse(&entry.unwrap()));
+            count += 1;
+        }
+        assert_eq!(2, count);
     }
 
     #[test]
     fn should_traverse_directory() {
+let tmp_dir = tempdir::TempDir::new("test");
+        if tmp_dir.is_err() {
+            return;
+        }
+        let tmp_dir = tmp_dir.unwrap();
 
+        let dir_builder = fs::DirBuilder::new();
+        let tmp_dir_path = tmp_dir.path();
+        let mut path_buf = tmp_dir_path.to_path_buf();
+        path_buf.push("directory");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.pop();
+        }
+
+        // Get the temporary directory's content.
+        let read_dir = path_buf.read_dir();
+        if read_dir.is_err() {
+            return;
+        }
+
+        let mut count = 0;
+        for entry in read_dir.unwrap() {
+            assert!(should_traverse(&entry.unwrap()));
+            count += 1;
+        }
+        assert_eq!(1, count);
     }
 }
