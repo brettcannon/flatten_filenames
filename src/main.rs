@@ -61,14 +61,13 @@ pub fn rename(path: &path::PathBuf, prefix: &str) {
 ///
 /// If a new part starts with '-' or '+' then strip it off.
 pub fn new_prefix(old_prefix: &str, tail: &str) -> String {
-    if old_prefix.is_empty() {
-        tail.to_string()
-    } else {
-        let mut postfix = tail;
-        if tail[0..1] == "+".to_string() || tail[0..1] == "-".to_string() {
+    let mut postfix = tail;
+    if tail[0..1] == "+".to_string() || tail[0..1] == "-".to_string() {
             postfix = &tail[1..];
-        }
-
+    }
+    if old_prefix.is_empty() {
+        postfix.to_string()
+    } else {
         old_prefix.to_string() + " - " + postfix
     }
 }
@@ -512,5 +511,33 @@ mod test {
         path_buf.push("G");
         path_buf.push("A - G - H");
         assert!(path_buf.exists());
+
+        path_buf.pop();
+
+        // -I/J -> I - J
+        path_buf.push("-I");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.push("J");
+            let f = fs::File::create(&path_buf);
+            if f.is_err() {
+                return;
+            }
+            let f = f.unwrap();
+            // Flush the file.
+            if f.sync_all().is_err() {
+                return;
+            } else {
+                path_buf.pop();
+            }
+        }
+
+        flatten(&path_buf, "");
+
+        path_buf.push("I - J");
+        assert!(path_buf.exists());
+
+
     }
 }
