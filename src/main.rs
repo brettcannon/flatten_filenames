@@ -78,7 +78,7 @@ pub fn new_prefix(old_prefix: &str, tail: &str) -> String {
 ///
 /// Certain considerations are taken into account based on the leading
 /// character of the directory's name.
-fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
+pub fn flatten(directory: &path::PathBuf, prev_prefix: &str) {
     let filename = directory.file_name().expect("directory lacks a tail");
     let path_tail = filename.to_str().expect("can't decode path tail");
     let prefix = new_prefix(prev_prefix, path_tail);
@@ -322,6 +322,195 @@ mod test {
         rename(&path_buf, "a - b - c");
         path_buf.pop();
         path_buf.push("a - b - c - d");
+        assert!(path_buf.exists());
+    }
+
+    #[test]
+    fn flatten_works() {
+        let tmp_dir = tempdir::TempDir::new("test");
+        if tmp_dir.is_err() {
+            return;
+        }
+        let tmp_dir = tmp_dir.unwrap();
+        let tmp_dir_path = tmp_dir.path();
+        let mut path_buf = tmp_dir_path.to_path_buf();
+        let dir_builder = fs::DirBuilder::new();
+
+        path_buf.push("A");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        }
+
+        // A/_skipped/skipped -> None
+        path_buf.push("_skipped");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.push("skipped");
+            let f = fs::File::create(&path_buf);
+            if f.is_err() {
+                return;
+            }
+            let f = f.unwrap();
+            // Flush the file.
+            if f.sync_all().is_err() {
+                return;
+            } else {
+                path_buf.pop();
+            }
+
+            path_buf.pop();
+        }
+
+        // A/-B/C -> A - B - C
+        path_buf.push("-B");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.push("C");
+            let f = fs::File::create(&path_buf);
+            if f.is_err() {
+                return;
+            }
+            let f = f.unwrap();
+            // Flush the file.
+            if f.sync_all().is_err() {
+                return;
+            } else {
+                path_buf.pop();
+            }
+
+            path_buf.pop();
+        }
+
+        // A/.skipped/skipped -> None
+        path_buf.push(".skipped");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.push("skipped");
+            let f = fs::File::create(&path_buf);
+            if f.is_err() {
+                return;
+            }
+            let f = f.unwrap();
+            // Flush the file.
+            if f.sync_all().is_err() {
+                return;
+            } else {
+                path_buf.pop();
+            }
+
+            path_buf.pop();
+        }
+
+        // A/+D/E -> A - D - E
+        path_buf.push("+D");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.push("E");
+            let f = fs::File::create(&path_buf);
+            if f.is_err() {
+                return;
+            }
+            let f = f.unwrap();
+            // Flush the file.
+            if f.sync_all().is_err() {
+                return;
+            } else {
+                path_buf.pop();
+            }
+
+            path_buf.pop();
+        }
+
+        // A/.skipped -> None
+        path_buf.push(".skipped");
+        let f = fs::File::create(&path_buf);
+        if f.is_err() {
+            return;
+        }
+        let f = f.unwrap();
+        // Flush the file.
+        if f.sync_all().is_err() {
+            return;
+        } else {
+            path_buf.pop();
+        }
+
+        // A/F -> A - F
+        path_buf.push("F");
+        let f = fs::File::create(&path_buf);
+        if f.is_err() {
+            return;
+        }
+        let f = f.unwrap();
+        // Flush the file.
+        if f.sync_all().is_err() {
+            return;
+        } else {
+            path_buf.pop();
+        }
+
+        // A/G/H -> A - G - H
+        path_buf.push("G");
+        if dir_builder.create(path_buf.as_path()).is_err() {
+            return;
+        } else {
+            path_buf.push("H");
+            let f = fs::File::create(&path_buf);
+            if f.is_err() {
+                return;
+            }
+            let f = f.unwrap();
+            // Flush the file.
+            if f.sync_all().is_err() {
+                return;
+            } else {
+                path_buf.pop();
+            }
+
+            path_buf.pop();
+        }
+
+        flatten(&path_buf, "");
+
+        // A/_skipped/skipped -> None
+        path_buf.push("_skipped");
+        path_buf.push("skipped");
+        assert!(path_buf.exists());
+        path_buf.pop();
+        path_buf.pop();
+        // A/-B/C -> A - B - C
+        path_buf.push("-B");
+        path_buf.push("A - B - C");
+        assert!(path_buf.exists());
+        path_buf.pop();
+        path_buf.pop();
+        // A/.skipped/skipped -> None
+        path_buf.push(".skipped");
+        path_buf.push("skipped");
+        assert!(path_buf.exists());
+        path_buf.pop();
+        path_buf.pop();
+        // A/+D/E -> A - D - E
+        path_buf.push("+D");
+        path_buf.push("A - D - E");
+        assert!(path_buf.exists());
+        path_buf.pop();
+        path_buf.pop();
+        // A/.skipped -> None
+        path_buf.push(".skipped");
+        assert!(path_buf.exists());
+        path_buf.pop();
+        // A/F -> A - F
+        path_buf.push("A - F");
+        assert!(path_buf.exists());
+        path_buf.pop();
+        // A/G/H -> A - G - H
+        path_buf.push("G");
+        path_buf.push("A - G - H");
         assert!(path_buf.exists());
     }
 }
