@@ -24,7 +24,13 @@ pub fn leading_char(path: &path::PathBuf) -> char {
 /// The characters that signal not to traverse into a directory are
 /// '.' and '_'.
 pub fn should_traverse(entry: &fs::DirEntry) -> bool {
-    if entry.metadata().unwrap().is_dir() {
+    let metadata = entry.metadata();
+    if metadata.is_err() {
+        println_stderr(format!("path missing metadata: {:?}", entry.path()));
+        return false;
+    }
+
+    if metadata.unwrap().is_dir() {
         let path = entry.path();
         let leading_char = leading_char(&path);
         if leading_char != '.' && leading_char != '_' {
