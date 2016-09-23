@@ -56,7 +56,7 @@ pub fn rename(path: &path::PathBuf, prefix: &str) {
     let new_filename = prefix.to_string() + " - " + filename;
     let mut new_path = path.clone();
     new_path.pop();
-    new_path.push(new_filename);
+    new_path.push(new_filename.to_lowercase());
     let r = fs::rename(path.as_path(), new_path.as_path());
     if r.is_err() {
         panic!(r);
@@ -72,9 +72,9 @@ pub fn new_prefix(old_prefix: &str, tail: &str) -> String {
             postfix = &tail[1..];
     }
     if old_prefix.is_empty() {
-        postfix.to_string()
+        postfix.to_string().to_lowercase()
     } else {
-        old_prefix.to_string() + " - " + postfix
+        (old_prefix.to_string() + " - " + postfix).to_lowercase()
     }
 }
 
@@ -272,8 +272,8 @@ mod test {
 
     #[test]
     fn new_prefix_works() {
-        assert_eq!("a - b", new_prefix("a", "b"));
-        assert_eq!("a - b - c", new_prefix("a - b", "c"));
+        assert_eq!("a - b", new_prefix("a", "B"));
+        assert_eq!("a - b - c", new_prefix("a - b", "C"));
     }
 
     #[test]
@@ -489,7 +489,7 @@ mod test {
         path_buf.pop();
         // A/-B/C -> A - B - C
         path_buf.push("-B");
-        path_buf.push("A - B - C");
+        path_buf.push("a - b - c");
         assert!(path_buf.exists());
         path_buf.pop();
         path_buf.pop();
@@ -501,7 +501,7 @@ mod test {
         path_buf.pop();
         // A/+D/E -> A - D - E
         path_buf.push("+D");
-        path_buf.push("A - D - E");
+        path_buf.push("a - d - e");
         assert!(path_buf.exists());
         path_buf.pop();
         path_buf.pop();
@@ -510,12 +510,12 @@ mod test {
         assert!(path_buf.exists());
         path_buf.pop();
         // A/F -> A - F
-        path_buf.push("A - F");
+        path_buf.push("a - f");
         assert!(path_buf.exists());
         path_buf.pop();
         // A/G/H -> A - G - H
         path_buf.push("G");
-        path_buf.push("A - G - H");
+        path_buf.push("a - g - h");
         assert!(path_buf.exists());
 
         path_buf.pop();
@@ -541,7 +541,7 @@ mod test {
 
         flatten(&path_buf, "");
 
-        path_buf.push("I - J");
+        path_buf.push("i - j");
         assert!(path_buf.exists());
 
 
