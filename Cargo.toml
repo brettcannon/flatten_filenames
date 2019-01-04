@@ -5,6 +5,7 @@ authors = ["Brett Cannon <brett@python.org>"]
 
 [[bin]]
 name = "flatten-filenames"
+path = "src/main.rs"
 
 [dependencies]
 
